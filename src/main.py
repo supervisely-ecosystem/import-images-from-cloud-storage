@@ -127,12 +127,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         if state["addMode"] == "addBylink":
             api.image.upload_links(dataset.id, names=[image_name], links=[remote_path])
         elif state["addMode"] == "copyData":
-            progress_upload_cb = ui.get_progress_cb(api, task_id, 2,
-                                                    "Uploading to Supervisely: {!r} ".format(temp_path),
-                                                    sly.fs.get_file_size(local_path),
-                                                    is_size=True,
-                                                    func=ui.set_progress)
-            api.image.upload_paths(dataset.id, names=[image_name], paths=[local_path], progress_cb=progress_upload_cb)
+            api.image.upload_paths(dataset.id, names=[image_name], paths=[local_path])
         progress_items_cb(1)
 
     ui.reset_progress(api, task_id, 1)

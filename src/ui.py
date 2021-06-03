@@ -35,12 +35,6 @@ def init_progress(data, state):
     data["currentProgress1"] = 0
     data["totalProgress1"] = 0
 
-    data["progressName2"] = None
-    data["currentProgressLabel2"] = 0
-    data["totalProgressLabel2"] = 0
-    data["currentProgress2"] = 0
-    data["totalProgress2"] = 0
-
 
 def reset_progress(api, task_id, index):
     _set_progress(index, api, task_id, None, 0, 0, 0, 0)

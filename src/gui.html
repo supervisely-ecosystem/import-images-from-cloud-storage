@@ -122,10 +122,9 @@
         </sly-field>
         <sly-field v-if="state.addMode === 'addBylink'"
                    title="Notice: you chose to add remote files by link without actual data copying"
-                   description="The app downloads image just once to preprocess and extract meta information,
-                   for example, frame mapping. Then image file is removed from temp folder and from now
-                   Supervisely will stream it from your connected cloud storage directly to browser. If you see that
-                   image lags in browser, there is a chance that your storage is not enough fast for streaming. Please, contact tech support.">
+                   description="The app downloads image just once to preprocess and extract meta information. Then image file is removed from temp folder and from now
+                   Supervisely will stream it from your connected cloud storage directly to browser. If you have any issues with
+                   image display in browser, please, contact tech support.">
             <!--                color: '#20a0ff', bgColor: '#daecff'-->
             <sly-icon slot="icon" :options="{ color: '#fba607', bgColor: '#ffe9da', rounded: false }">
                 <i class="zmdi zmdi-info"></i>
@@ -160,11 +159,6 @@
         <div v-if="data.progressName1" class="mt10">
             <div>{{data.progressName1}}: {{data.currentProgressLabel1}} / {{data.totalProgressLabel1}}</div>
             <el-progress :percentage="Math.round(data.currentProgress1 * 100 / data.totalProgress1)"></el-progress>
-        </div>
-        <div v-if="data.progressName2" class="mt10">
-            <div>{{data.progressName2}}: <b><span style="color: #20a0ff">{{data.currentProgressLabel2}}</span> /
-                {{data.totalProgressLabel2}}</b></div>
-            <el-progress :percentage="Math.round(data.currentProgress2 * 100 / data.totalProgress2)"></el-progress>
         </div>
     </sly-card>
 
