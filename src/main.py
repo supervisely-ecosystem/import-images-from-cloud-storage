@@ -22,7 +22,7 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
 
     path = f"{state['provider']}://{state['bucketName']}"
     try:
-        files = api.remote_storage.list(path)
+        files = api.remote_storage.list(path, folders=False)
     except Exception as e:
         app.show_modal_window("Can not find bucket or permission denied. Please, check if provider / bucket name are "
                               "correct or contact tech support", level="warning")
