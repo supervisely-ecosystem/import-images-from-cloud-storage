@@ -1,5 +1,5 @@
 <div align="center" markdown>
-<img src="https://i.imgur.com/d6I6enW.png"/>
+<img src="https://user-images.githubusercontent.com/48245050/182403218-5ab9905c-5b79-442e-b8e1-c1a1a274c81d.png"/>
 
 # Import images from cloud storage
 
