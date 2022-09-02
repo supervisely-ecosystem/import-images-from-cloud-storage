@@ -122,6 +122,17 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 
     # get all files from selected dirs
     if len(selected_dirs) > 0:
+        global file_size
+        file_size = {}
+        for dir_path in selected_dirs:
+            full_dir_path = f"{state['provider']}://{dir_path.strip('/')}"
+            dir_files = api.remote_storage.list(full_dir_path, recursive=True)
+            for file in dir_files:
+                path = os.path.join(
+                    f"/{state['bucketName']}", file["prefix"], file["name"]
+                )
+                file_size[path] = file["size"]
+
         for path in file_size.keys():
             if path in selected_dirs:
                 continue
