@@ -46,8 +46,6 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
     tree_items = []
     for file in files:
         path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
-        if file["type"] == "folder":
-            path += "/"
         tree_items.append({"path": path, "size": file["size"], "type": file["type"]})
         file_size[path] = file["size"]
 

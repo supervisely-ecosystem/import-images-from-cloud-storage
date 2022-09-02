@@ -13,6 +13,7 @@ def init_connection(data, state):
     state["selected"] = ""
     data["tree"] = None
     data["connecting"] = False
+    state["viewerPath"] = ""
 
 
 def init_options(data, state):
