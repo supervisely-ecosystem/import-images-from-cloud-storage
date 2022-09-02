@@ -172,6 +172,10 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     api.task.set_output_project(task_id, project.id, project.name)
 
 
+# TODO:
+# empty folder - icon with nothing
+
+
 def main():
     data = {}
     state = {}
