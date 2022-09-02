@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 import sys
-import supervisely_lib as sly
+import supervisely as sly
 import ui
 
 # for debugging, has no effect in production
@@ -27,8 +27,9 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
 
     path = f"{state['provider']}://{state['bucketName']}"
     try:
-        files = api.remote_storage.list(path, folders=False)
+        files = api.remote_storage.list(path, recursive=False)
     except Exception as e:
+        sly.logger.warn(repr(e))
         app.show_modal_window(
             "Can not find bucket or permission denied. Please, check if provider / bucket name are "
             "correct or contact tech support",
@@ -44,7 +45,9 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
     tree_items = []
     for file in files:
         path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
-        tree_items.append({"path": path, "size": file["size"]})
+        if file["type"] == "folder":
+            path += "/"
+        tree_items.append({"path": path, "size": file["size"], "type": file["type"]})
         file_size[path] = file["size"]
 
     fields = [
