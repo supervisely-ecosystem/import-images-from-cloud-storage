@@ -5,3 +5,4 @@ secret_debug.env
 .venv
 .DS_Store
 *.pyc
+supervisely

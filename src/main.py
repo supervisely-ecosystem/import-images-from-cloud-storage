@@ -19,14 +19,51 @@ workspace_id = int(os.environ["context.workspaceId"])
 file_size = None
 
 
+@app.callback("refresh_tree_viewer")
+@sly.timeit
+def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
+    new_path = state["viewerPath"]
+    global file_size
+    file_size = {}
+
+    path = f"{state['provider']}://{new_path.strip('/')}"
+    try:
+        files = api.remote_storage.list(path, recursive=False)
+    except Exception as e:
+        sly.logger.warn(repr(e))
+        app.show_modal_window(
+            "Can not find bucket or permission denied. Please, check if provider / bucket name are "
+            "correct or contact tech support",
+            level="warning",
+        )
+        fields = [
+            {"field": "data.tree", "payload": None},
+            {"field": "data.connecting", "payload": False},
+            {"field": "state.viewerLoading", "payload": False},
+        ]
+        api.task.set_fields(task_id, fields)
+        return
+
+    tree_items = []
+    for file in files:
+        path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
+        tree_items.append({"path": path, "size": file["size"], "type": file["type"]})
+        file_size[path] = file["size"]
+
+    fields = [
+        {"field": "data.tree", "payload": tree_items},
+        {"field": "state.viewerLoading", "payload": False},
+    ]
+    api.task.set_fields(task_id, fields)
+
+
 @app.callback("preview")
 @sly.timeit
 def preview(api: sly.Api, task_id, context, state, app_logger):
     global file_size
     file_size = {}
 
-    current_path = ""
-    path = f"{state['provider']}://{state['bucketName']}/{current_path}"
+    path = f"{state['provider']}://{state['bucketName']}"
     try:
         files = api.remote_storage.list(path, recursive=False)
     except Exception as e:

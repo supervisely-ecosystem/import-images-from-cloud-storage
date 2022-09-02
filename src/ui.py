@@ -9,8 +9,9 @@ def init_context(data, team_id, workspace_id):
 
 def init_connection(data, state):
     state["provider"] = "s3"
-    state["bucketName"] = "remote-img-test"  # TODO: ""
+    state["bucketName"] = ""  # "bucket-test-export"  # "remote-img-test"  # TODO: ""
     state["selected"] = ""
+    state["viewerLoading"] = False
     data["tree"] = None
     data["connecting"] = False
     state["viewerPath"] = ""
