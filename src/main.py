@@ -25,7 +25,8 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
     global file_size
     file_size = {}
 
-    path = f"{state['provider']}://{state['bucketName']}"
+    current_path = ""
+    path = f"{state['provider']}://{state['bucketName']}/{current_path}"
     try:
         files = api.remote_storage.list(path, recursive=False)
     except Exception as e:
@@ -174,6 +175,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 
 # TODO:
 # empty folder - icon with nothing
+# cache existing directories for speedup
 
 
 def main():
