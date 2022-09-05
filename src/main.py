@@ -7,15 +7,15 @@ import ui
 
 # for debugging, has no effect in production
 load_dotenv(os.path.expanduser("~/supervisely.env"))
-load_dotenv("debug.env")
+load_dotenv("../debug.env")
 
 app: sly.AppService = sly.AppService()
 app_sources_dir = str(Path(sys.argv[0]).parents[1])
 
-
 team_id = int(os.environ["context.teamId"])
 workspace_id = int(os.environ["context.workspaceId"])
 
+user_preview_limit = 100
 file_size = None
 
 
@@ -23,12 +23,12 @@ file_size = None
 @sly.timeit
 def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
     new_path = state["viewerPath"]
-    global file_size
+    global file_size, user_preview_limit
     file_size = {}
 
     path = f"{state['provider']}://{new_path.strip('/')}"
     try:
-        files = api.remote_storage.list(path, recursive=False)
+        files = api.remote_storage.list(path, recursive=False, limit=user_preview_limit)
     except Exception as e:
         sly.logger.warn(repr(e))
         app.show_modal_window(
@@ -60,12 +60,12 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
 @app.callback("preview")
 @sly.timeit
 def preview(api: sly.Api, task_id, context, state, app_logger):
-    global file_size
+    global file_size, user_preview_limit
     file_size = {}
 
     path = f"{state['provider']}://{state['bucketName']}"
     try:
-        files = api.remote_storage.list(path, recursive=False)
+        files = api.remote_storage.list(path, recursive=False, limit=user_preview_limit)
     except Exception as e:
         sly.logger.warn(repr(e))
         app.show_modal_window(
@@ -126,8 +126,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         file_size = {}
         for dir_path in selected_dirs:
             full_dir_path = f"{state['provider']}://{dir_path.strip('/')}"
-            dir_files = api.remote_storage.list(full_dir_path, recursive=True)
-            for file in dir_files:
+            for file in list_objects(api, full_dir_path):
                 path = os.path.join(
                     f"/{state['bucketName']}", file["prefix"], file["name"]
                 )
@@ -178,35 +177,42 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     progress_items_cb = ui.get_progress_cb(
         api, task_id, 1, "Finished", len(remote_paths)
     )
-    for remote_path, temp_path, local_path in zip(
-        remote_paths, widget_paths, local_paths
-    ):
-        progress_file_cb = ui.get_progress_cb(
-            api,
-            task_id,
-            2,
-            "Downloading to temp dir: {!r} ".format(temp_path),
-            file_size[temp_path],
-            is_size=True,
-        )
-        api.remote_storage.download_path(remote_path, local_path, progress_file_cb)
-        temp_cb = ui.get_progress_cb(
-            api,
-            task_id,
-            2,
-            "Processing: {!r} ".format(temp_path),
-            1,
-            is_size=False,
-            func=ui.set_progress,
-        )
-        temp_cb(1)
-        image_name = sly.fs.get_file_name_with_ext(local_path)
-        image_name = api.image.get_free_name(dataset.id, image_name)
+    for batch_remote_paths, batch_temp_paths, batch_local_paths in zip(sly.batched(remote_paths), sly.batched(widget_paths), sly.batched(local_paths)):
+        images_names = []
+
+        for local_path in batch_local_paths:
+            image_name = sly.fs.get_file_name_with_ext(local_path)
+            image_name = api.image.get_free_name(dataset.id, image_name)
+            images_names.append(image_name)
+
+        if state["addMode"] == "copyData":
+            for remote_path, temp_path, local_path in zip(batch_remote_paths, batch_temp_paths, batch_local_paths):
+                progress_file_cb = ui.get_progress_cb(
+                    api,
+                    task_id,
+                    2,
+                    "Downloading to temp dir: {!r} ".format(temp_path),
+                    file_size[temp_path],
+                    is_size=True,
+                )
+
+                api.remote_storage.download_path(remote_path, local_path, progress_file_cb)
+                temp_cb = ui.get_progress_cb(
+                    api,
+                    task_id,
+                    2,
+                    "Processing: {!r} ".format(temp_path),
+                    1,
+                    is_size=False,
+                    func=ui.set_progress,
+                )
+                temp_cb(1)
+
         if state["addMode"] == "addBylink":
-            api.image.upload_links(dataset.id, names=[image_name], links=[remote_path])
+            api.image.upload_links(dataset.id, names=images_names, links=batch_remote_paths)
         elif state["addMode"] == "copyData":
-            api.image.upload_paths(dataset.id, names=[image_name], paths=[local_path])
-        progress_items_cb(1)
+            api.image.upload_paths(dataset.id, names=images_names, paths=batch_local_paths)
+        progress_items_cb(len(images_names))
 
     ui.reset_progress(api, task_id, 1)
     ui.reset_progress(api, task_id, 2)
@@ -225,6 +231,18 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 # SDK version
 # limit list
 # list with pagination
+
+def list_objects(api, full_dir_path):
+    start_after = None
+    while True:
+        remote_objs = api.remote_storage.list(path=full_dir_path,
+                                              files=True,
+                                              folders=False,
+                                              recursive=True,
+                                              start_after=start_after)
+        if len(remote_objs) == 0: break
+        start_after = remote_objs[-1]["name"]
+        yield from remote_objs
 
 
 def main():
