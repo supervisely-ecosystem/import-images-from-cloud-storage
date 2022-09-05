@@ -44,6 +44,10 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
         api.task.set_fields(task_id, fields)
         return
 
+    if len(files) > user_preview_limit:
+        files.pop()
+        app.show_modal_window(f"Found too many files. Showing the first {user_preview_limit} files")
+
     tree_items = []
     for file in files:
         path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
@@ -65,7 +69,7 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
 
     path = f"{state['provider']}://{state['bucketName']}"
     try:
-        files = api.remote_storage.list(path, recursive=False, limit=user_preview_limit)
+        files = api.remote_storage.list(path, recursive=False, limit=user_preview_limit + 1)
     except Exception as e:
         sly.logger.warn(repr(e))
         app.show_modal_window(
@@ -79,6 +83,10 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
         ]
         api.task.set_fields(task_id, fields)
         return
+
+    if len(files) > user_preview_limit:
+        files.pop()
+        app.show_modal_window(f"Found too many files. Showing the first {user_preview_limit} files")
 
     tree_items = []
     for file in files:
@@ -124,13 +132,18 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     if len(selected_dirs) > 0:
         global file_size
         file_size = {}
+
         for dir_path in selected_dirs:
             full_dir_path = f"{state['provider']}://{dir_path.strip('/')}"
+            files_cnt = 0
             for file in list_objects(api, full_dir_path):
                 path = os.path.join(
                     f"/{state['bucketName']}", file["prefix"], file["name"]
                 )
                 file_size[path] = file["size"]
+                files_cnt += 1
+                if files_cnt % 10000:
+                    sly.logger.info(f"Listing files from remote storage {files_cnt}")
 
         for path in file_size.keys():
             if path in selected_dirs:
@@ -177,7 +190,9 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     progress_items_cb = ui.get_progress_cb(
         api, task_id, 1, "Finished", len(remote_paths)
     )
-    for batch_remote_paths, batch_temp_paths, batch_local_paths in zip(sly.batched(remote_paths), sly.batched(widget_paths), sly.batched(local_paths)):
+    for batch_remote_paths, batch_temp_paths, batch_local_paths in zip(sly.batched(remote_paths),
+                                                                       sly.batched(widget_paths),
+                                                                       sly.batched(local_paths)):
         images_names = []
 
         for local_path in batch_local_paths:
