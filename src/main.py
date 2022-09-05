@@ -1,13 +1,13 @@
 import os
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 from pathlib import Path
 import sys
 import supervisely as sly
 import ui
 
 # for debugging, has no effect in production
-load_dotenv(os.path.expanduser("~/supervisely.env"))
-load_dotenv("../debug.env")
+# load_dotenv(os.path.expanduser("~/supervisely.env"))
+# load_dotenv("../debug.env")
 
 app: sly.AppService = sly.AppService()
 app_sources_dir = str(Path(sys.argv[0]).parents[1])
@@ -28,7 +28,7 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
 
     path = f"{state['provider']}://{new_path.strip('/')}"
     try:
-        files = api.remote_storage.list(path, recursive=False, limit=user_preview_limit)
+        files = api.remote_storage.list(path, recursive=False, limit=user_preview_limit + 1)
     except Exception as e:
         sly.logger.warn(repr(e))
         app.show_modal_window(
