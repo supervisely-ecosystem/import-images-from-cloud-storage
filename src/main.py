@@ -142,7 +142,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                 )
                 file_size[path] = file["size"]
                 files_cnt += 1
-                if files_cnt % 10000:
+                if files_cnt % 10000 == 0:
                     sly.logger.info(f"Listing files from remote storage {files_cnt}")
 
         for path in file_size.keys():
@@ -256,7 +256,8 @@ def list_objects(api, full_dir_path):
                                               recursive=True,
                                               start_after=start_after)
         if len(remote_objs) == 0: break
-        start_after = remote_objs[-1]["name"]
+        last_obj = remote_objs[-1]
+        start_after = f'{last_obj["prefix"]}/{last_obj["name"]}'
         yield from remote_objs
 
 
