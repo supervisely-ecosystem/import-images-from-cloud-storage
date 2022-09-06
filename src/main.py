@@ -44,6 +44,8 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
         api.task.set_fields(task_id, fields)
         return
 
+    files = [f for f in files if f["size"] > 0]
+
     if len(files) > user_preview_limit:
         files.pop()
         app.show_modal_window(f"Found too many files. Showing the first {user_preview_limit} files")
@@ -83,6 +85,8 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
         ]
         api.task.set_fields(task_id, fields)
         return
+
+    files = [f for f in files if f["size"] > 0]
 
     if len(files) > user_preview_limit:
         files.pop()
@@ -137,6 +141,8 @@ def process(api: sly.Api, task_id, context, state, app_logger):
             full_dir_path = f"{state['provider']}://{dir_path.strip('/')}"
             files_cnt = 0
             for file in list_objects(api, full_dir_path):
+                if file["size"] <= 0: continue
+
                 path = os.path.join(
                     f"/{state['bucketName']}", file["prefix"], file["name"]
                 )
