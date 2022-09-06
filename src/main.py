@@ -44,7 +44,7 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
         api.task.set_fields(task_id, fields)
         return
 
-    # files = [f for f in files if f["size"] > 0]
+    files = [f for f in files if f["type"] == 'folder' or (f["type"] == 'file' and f["size"] > 0)]
 
     if len(files) > user_preview_limit:
         files.pop()
@@ -86,7 +86,7 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
         api.task.set_fields(task_id, fields)
         return
 
-    # files = [f for f in files if f["size"] > 0]
+    files = [f for f in files if f["type"] == 'folder' or (f["type"] == 'file' and f["size"] > 0)]
 
     if len(files) > user_preview_limit:
         files.pop()
