@@ -1,39 +1,24 @@
 import os
 import ui
-import sys
-from pathlib import Path
 import supervisely as sly
 
-# for debugging, has no effect in production
-# from dotenv import load_dotenv
-# load_dotenv(os.path.expanduser("~/supervisely.env"))
-# load_dotenv("debug.env")
-
-app: sly.AppService = sly.AppService()
-app_sources_dir = str(Path(sys.argv[0]).parents[1])
-
-team_id = int(os.environ["context.teamId"])
-workspace_id = int(os.environ["context.workspaceId"])
-
-user_preview_limit = 100
-file_size = None
+import globals as g
 
 
-@app.callback("refresh_tree_viewer")
+@g.app.callback("refresh_tree_viewer")
 @sly.timeit
 def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
     new_path = state["viewerPath"]
-    global file_size, user_preview_limit
-    file_size = {}
+    g.FILE_SIZE = {}
 
     path = f"{state['provider']}://{new_path.strip('/')}"
     try:
         files = api.remote_storage.list(
-            path, recursive=False, limit=user_preview_limit + 1
+            path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1
         )
     except Exception as e:
         sly.logger.warn(repr(e))
-        app.show_modal_window(
+        g.app.show_modal_window(
             "Can not find bucket or permission denied. Please, check if provider / bucket name are "
             "correct or contact tech support",
             level="warning",
@@ -52,17 +37,17 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
         if f["type"] == "folder" or (f["type"] == "file" and f["size"] > 0)
     ]
 
-    if len(files) > user_preview_limit:
+    if len(files) > g.USER_PREVIEW_LIMIT:
         files.pop()
-        app.show_modal_window(
-            f"Found too many files. Showing the first {user_preview_limit} files"
+        g.app.show_modal_window(
+            f"Found too many files. Showing the first {g.USER_PREVIEW_LIMIT} files"
         )
 
     tree_items = []
     for file in files:
         path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
         tree_items.append({"path": path, "size": file["size"], "type": file["type"]})
-        file_size[path] = file["size"]
+        g.FILE_SIZE[path] = file["size"]
 
     fields = [
         {"field": "data.tree", "payload": tree_items},
@@ -71,20 +56,19 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
     api.task.set_fields(task_id, fields)
 
 
-@app.callback("preview")
+@g.app.callback("preview")
 @sly.timeit
 def preview(api: sly.Api, task_id, context, state, app_logger):
-    global file_size, user_preview_limit
-    file_size = {}
+    g.FILE_SIZE = {}
 
     path = f"{state['provider']}://{state['bucketName']}"
     try:
         files = api.remote_storage.list(
-            path, recursive=False, limit=user_preview_limit + 1
+            path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1
         )
     except Exception as e:
         sly.logger.warn(repr(e))
-        app.show_modal_window(
+        g.app.show_modal_window(
             "Can not find bucket or permission denied. Please, check if provider / bucket name are "
             "correct or contact tech support",
             level="warning",
@@ -102,17 +86,17 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
         if f["type"] == "folder" or (f["type"] == "file" and f["size"] > 0)
     ]
 
-    if len(files) > user_preview_limit:
+    if len(files) > g.USER_PREVIEW_LIMIT:
         files.pop()
-        app.show_modal_window(
-            f"Found too many files. Showing the first {user_preview_limit} files"
+        g.app.show_modal_window(
+            f"Found too many files. Showing the first {g.USER_PREVIEW_LIMIT} files"
         )
 
     tree_items = []
     for file in files:
         path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
         tree_items.append({"path": path, "size": file["size"], "type": file["type"]})
-        file_size[path] = file["size"]
+        g.FILE_SIZE[path] = file["size"]
 
     fields = [
         {"field": "data.tree", "payload": tree_items},
@@ -121,7 +105,7 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
     api.task.set_fields(task_id, fields)
 
 
-@app.callback("process")
+@g.app.callback("process")
 @sly.timeit
 def process(api: sly.Api, task_id, context, state, app_logger):
     paths = state["selected"]
@@ -137,7 +121,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         full_remote_path = f"{state['provider']}://{path.lstrip('/')}"
         remote_paths.append(full_remote_path)
         widget_paths.append(path)
-        local_path = os.path.join(app.data_dir, path.lstrip("/"))
+        local_path = os.path.join(g.app.data_dir, path.lstrip("/"))
         sly.fs.ensure_base_path(local_path)
         local_paths.append(local_path)
 
@@ -150,8 +134,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 
     # get all files from selected dirs
     if len(selected_dirs) > 0:
-        global file_size
-        file_size = {}
+        g.FILE_SIZE = {}
 
         for dir_path in selected_dirs:
             full_dir_path = f"{state['provider']}://{dir_path.strip('/')}"
@@ -163,12 +146,12 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                 path = os.path.join(
                     f"/{state['bucketName']}", file["prefix"], file["name"]
                 )
-                file_size[path] = file["size"]
+                g.FILE_SIZE[path] = file["size"]
                 files_cnt += 1
                 if files_cnt % 10000 == 0:
                     sly.logger.info(f"Listing files from remote storage {files_cnt}")
 
-        for path in file_size.keys():
+        for path in g.FILE_SIZE.keys():
             if path in selected_dirs:
                 continue
             if path.startswith(tuple(selected_dirs)):
@@ -180,7 +163,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
             _add_to_processing_list(path)
 
     if len(local_paths) == 0:
-        app.show_modal_window("There are no images to import", "warning")
+        g.app.show_modal_window("There are no images to import", "warning")
         sly.logger.warn("nothing to download")
         api.app.set_field(task_id, "data.processing", False)
         return
@@ -188,7 +171,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     project = None
     if state["dstProjectMode"] == "newProject":
         project = api.project.create(
-            workspace_id,
+            g.WORKSPACE_ID,
             state["dstProjectName"],
             sly.ProjectType.IMAGES,
             change_name_if_conflict=True,
@@ -232,7 +215,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                     task_id,
                     2,
                     "Downloading to temp dir: {!r} ".format(temp_path),
-                    file_size[temp_path],
+                    g.FILE_SIZE[temp_path],
                     is_size=True,
                 )
 
@@ -250,12 +233,12 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                 )
                 temp_cb(1)
 
-        if state["addMode"] == "addBylink":
+        if state["addMode"] == "addByLink":
             api.image.upload_links(
                 dataset.id,
                 names=images_names,
                 links=batch_remote_paths,
-                force_metadata_for_links=False,
+                force_metadata_for_links=state["forceMetadata"],
             )
         elif state["addMode"] == "copyData":
             api.image.upload_paths(
@@ -265,7 +248,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 
     ui.reset_progress(api, task_id, 1)
     ui.reset_progress(api, task_id, 2)
-    app.show_modal_window(
+    g.app.show_modal_window(
         f'{len(remote_paths)} images has been successfully imported to the project "{project.name}"'
         f', dataset "{dataset.name}". You can continue importing other images to the same or new '
         f"project. If you've finished with the app, stop it manually."
@@ -303,12 +286,12 @@ def main():
     data = {}
     state = {}
 
-    ui.init_context(data, team_id, workspace_id)
+    ui.init_context(data, g.TEAM_ID, g.WORKSPACE_ID)
     ui.init_connection(data, state)
     ui.init_options(data, state)
     ui.init_progress(data, state)
 
-    app.run(data=data, state=state)
+    g.app.run(data=data, state=state)
 
 
 if __name__ == "__main__":
