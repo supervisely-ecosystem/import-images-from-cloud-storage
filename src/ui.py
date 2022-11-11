@@ -20,7 +20,7 @@ def init_connection(data, state):
 
 def init_options(data, state):
     state["addMode"] = "copyData"  # "addByLink"
-    state["forceMetadata"] = True
+    state["forceMetadata"] = False
 
     state["dstProjectMode"] = "newProject"
     state["dstProjectName"] = "my_images"

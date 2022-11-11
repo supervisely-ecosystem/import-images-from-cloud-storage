@@ -45,8 +45,8 @@
       <div class="fflex align-start mt5" v-if="state.addMode === 'addByLink'">
         <el-checkbox v-model="state.forceMetadata" style="margin: 5px 10px 0 0">
         </el-checkbox>
-        <sly-field class="mt20" title="Upload Metadata"
-          description="If disabled - images will be added without metadata">
+        <sly-field class="mt20" title="Data validation"
+          description="Image will be downloaded once to calculate hash, get resolution and validate mimetype. If disabled, image will be directly added to the selected project without metadata (fast import without validation).">
         </sly-field>
       </div>
     </sly-field>

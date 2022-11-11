@@ -6,6 +6,7 @@ import functions as f
 import globals as g
 import ui
 
+import time
 
 @g.app.callback("refresh_tree_viewer")
 @sly.timeit
@@ -110,6 +111,7 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
 @g.app.callback("process")
 @sly.timeit
 def process(api: sly.Api, task_id, context, state, app_logger):
+    start_time = time.time()
     paths = state["selected"]
     remote_paths = []
     widget_paths = []
@@ -194,19 +196,30 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         sly.logger.error("Result dataset is None (not found or not created)")
         return
 
+    if state["dstDatasetMode"] == "existingDataset":
+        all_images_names = {img_info.name for img_info in api.image.get_list(dataset_id=dataset.id, force_metadata_for_links=False)}
+    else:
+        all_images_names = set()
+        
+    if state["addMode"] == "copyData":
+        g.BATCH_SIZE = 50
+            
     progress_items_cb = ui.get_progress_cb(
         api, task_id, 1, "Finished", len(remote_paths)
     )
-
-    if state["dstDatasetMode"] == "existingDataset":
-        ds_images_names = [img_info.name for img_info in api.image.get_list(dataset_id=dataset.id, force_metadata_for_links=False)]
-        res_names = f.get_images_names_from_paths(local_paths=local_paths, used_names=ds_images_names)
-    else:
-        res_names = f.get_images_names_from_paths(local_paths=local_paths)
-
-    for batch_names, batch_remote_paths, batch_temp_paths, batch_local_paths in zip(sly.batched(res_names, batch_size=g.BATCH_SIZE),
+    
+    free_name_time = 0
+    for batch_remote_paths, batch_temp_paths, batch_local_paths in zip(
         sly.batched(remote_paths, batch_size=g.BATCH_SIZE), sly.batched(widget_paths, batch_size=g.BATCH_SIZE), sly.batched(local_paths, batch_size=g.BATCH_SIZE)
     ):
+        start_name_generation = time.time()
+        images_names = []
+        for local_path in batch_local_paths:
+            image_name = sly.fs.get_file_name_with_ext(local_path)
+            image_name = f.generate_free_name(used_names=all_images_names, possible_name=image_name, with_ext=True, extend_used_names=True)
+            images_names.append(image_name)
+        free_name_time += time.time() - start_name_generation
+        
         if state["addMode"] == "copyData":
             for remote_path, temp_path, local_path in zip(
                 batch_remote_paths, batch_temp_paths, batch_local_paths
@@ -237,19 +250,21 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         if state["addMode"] == "addByLink":
             api.image.upload_links(
                 dataset.id,
-                names=batch_names,
+                names=images_names,
                 links=batch_remote_paths,
                 batch_size=g.BATCH_SIZE,
                 force_metadata_for_links=state["forceMetadata"],
             )
         elif state["addMode"] == "copyData":
             api.image.upload_paths(
-                dataset.id, names=batch_names, paths=batch_local_paths
+                dataset.id, names=images_names, paths=batch_local_paths
             )
-        progress_items_cb(len(batch_names))
+        progress_items_cb(len(images_names))
 
     ui.reset_progress(api, task_id, 1)
     ui.reset_progress(api, task_id, 2)
+    print("Name generation time --- %s seconds ---" % (free_name_time))
+    print("Total time --- %s seconds ---" % (time.time() - start_time))
     g.app.show_modal_window(
         f'{len(remote_paths)} images has been successfully imported to the project "{project.name}"'
         f', dataset "{dataset.name}". You can continue importing other images to the same or new '
