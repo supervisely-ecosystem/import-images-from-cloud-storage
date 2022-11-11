@@ -1,5 +1,6 @@
-import supervisely_lib as sly
 from functools import partial
+
+import supervisely as sly
 
 
 def init_context(data, team_id, workspace_id):
@@ -18,7 +19,9 @@ def init_connection(data, state):
 
 
 def init_options(data, state):
-    state["addMode"] = "copyData"
+    state["addMode"] = "copyData"  # "addByLink"
+    state["forceMetadata"] = False
+
     state["dstProjectMode"] = "newProject"
     state["dstProjectName"] = "my_images"
     state["dstProjectId"] = None

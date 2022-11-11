@@ -2,233 +2,136 @@
   <sly-style>
     #import-images-gcs .input-label .right-side .text-muted { color: black; }
   </sly-style>
-  <sly-card
-    title="1. Connect to the cloud storage"
-    subtitle="Choose cloud service provider and bucket name"
-  >
+  <sly-card title="1. Connect to the cloud storage" subtitle="Choose cloud service provider and bucket name">
     <div class="fflex">
       <sly-field title="Provider" style="margin: 0 10px 0 0">
         <el-select v-model="state.provider" placeholder="Select cloud provider">
-          <el-option
-            key="google"
-            label="google cloud storage"
-            value="google"
-          ></el-option>
+          <el-option key="google" label="google cloud storage" value="google"></el-option>
           <el-option key="amazon" label="amazon s3" value="s3"></el-option>
-          <el-option
-            key="azure"
-            label="azure storage"
-            value="azure"
-          ></el-option>
+          <el-option key="azure" label="azure storage" value="azure"></el-option>
         </el-select>
       </sly-field>
       <sly-field title="Bucket name" style="flex: 1; margin: 0 10px 0 0">
         <el-input v-model="state.bucketName" class="mr10"></el-input>
       </sly-field>
-      <el-button
-        class="regular"
-        type="primary"
-        style="align-self: flex-end"
-        :loading="data.connecting === true"
+      <el-button class="regular" type="primary" style="align-self: flex-end" :loading="data.connecting === true"
         :disabled="state.bucketName.length === 0 || data.processing === true"
-        @click="data.connecting = true; command('preview')"
-      >
+        @click="data.connecting = true; command('preview')">
         <i class="zmdi zmdi-cloud mr5"></i> Connect
       </el-button>
     </div>
   </sly-card>
 
-  <sly-card
-    v-if="data.tree"
-    class="mt10"
-    title="2. Preview bucket and select items"
-    subtitle="All selected image/directories will be imported"
-  >
-    <sly-file-viewer
-      v-loading="state.viewerLoading"
-      :list="data.tree"
-      v-model="state.selected"
+  <sly-card v-if="data.tree" class="mt10" title="2. Preview bucket and select items"
+    subtitle="All selected image/directories will be imported">
+    <sly-file-viewer v-loading="state.viewerLoading" :list="data.tree" v-model="state.selected"
       :options="{flatMode: true}"
-      @change="(evt) => { if (evt.type !== 'folder') return; state.viewerPath = evt.path; state.viewerLoading = true; command('refresh_tree_viewer') }"
-    />
+      @change="(evt) => { if (evt.type !== 'folder') return; state.viewerPath = evt.path; state.viewerLoading = true; command('refresh_tree_viewer') }" />
   </sly-card>
 
-  <sly-card
-    v-show="state.selected.length > 0"
-    class="mt10"
-    title="3. Import settings"
-    subtitle="Configure data copying and destination project"
-  >
-    <sly-field
-      title="Data duplication"
-      description="Choose whether data should be copied to internal Supervisely Storage or just added by link"
-    >
-      <div
-        class="fflex"
-        style="flex-direction: column; align-items: flex-start"
-      >
+  <sly-card v-show="state.selected.length > 0" class="mt10" title="3. Import settings"
+    subtitle="Configure data copying and destination project">
+    <sly-field title="Data duplication"
+      description="Choose whether data should be copied to internal Supervisely Storage or just added by link">
+      <div class="fflex" style="flex-direction: column; align-items: flex-start">
         <el-radio class="radio" v-model="state.addMode" label="copyData">
           Copy file from cloud to Supervisely Storage
         </el-radio>
-        <el-radio
-          class="radio mt5"
-          v-model="state.addMode"
-          label="addBylink"
-          style="margin-left: 0"
-        >
+        <el-radio class="radio mt5" v-model="state.addMode" label="addByLink" style="margin-left: 0">
           Keep file only in cloud without duplication, add to Supervisely
           Storage by link
         </el-radio>
       </div>
+      <div class="fflex align-start mt5" v-if="state.addMode === 'addByLink'">
+        <el-checkbox v-model="state.forceMetadata" style="margin: 5px 10px 0 0">
+        </el-checkbox>
+        <sly-field class="mt20" title="Data validation"
+          description="Image will be downloaded once to calculate hash, get resolution and validate mimetype. If disabled, image will be directly added to the selected project without metadata (fast import without validation).">
+        </sly-field>
+      </div>
     </sly-field>
-    <sly-field
-      title="Result project"
-      description="Define destination project and dataset"
-    >
+    <sly-field title="Result project" description="Define destination project and dataset">
       <div class="fflex">
-        <el-radio
-          class="radio"
-          v-model="state.dstProjectMode"
-          label="newProject"
-          @input="(val) => {
+        <el-radio class="radio" v-model="state.dstProjectMode" label="newProject" @input="(val) => {
                             if (val === 'newProject') {
                                 state.dstDatasetMode = 'newDataset';
                             }
-                          }"
-        >
+                          }">
           Create new project
         </el-radio>
-        <el-radio
-          class="radio"
-          v-model="state.dstProjectMode"
-          label="existingProject"
-          >Add to existing project
+        <el-radio class="radio" v-model="state.dstProjectMode" label="existingProject">Add to existing project
         </el-radio>
       </div>
       <div class="mt5">
         <div v-if="state.dstProjectMode === 'newProject'">
-          <el-input
-            placeholder="Please input project name"
-            v-model="state.dstProjectName"
-          ></el-input>
+          <el-input placeholder="Please input project name" v-model="state.dstProjectName"></el-input>
           <div class="mt5" style="color: #5a6772">
-            <i
-              >If project with the same name already exists, a new name will be
-              generated automatically</i
-            >
+            <i>If project with the same name already exists, a new name will be
+              generated automatically</i>
           </div>
         </div>
         <div v-if="state.dstProjectMode === 'existingProject'">
-          <sly-select-project
-            :workspace-id="data.workspaceId"
-            :project-id.sync="state.dstProjectId"
-            :options="{showLabel: false, availableTypes: ['images']}"
-          >
+          <sly-select-project :workspace-id="data.workspaceId" :project-id.sync="state.dstProjectId"
+            :options="{showLabel: false, availableTypes: ['images']}">
           </sly-select-project>
         </div>
       </div>
     </sly-field>
-    <sly-field
-      title="Result dataset"
-      description="All selected items will be placed to a single dataset. To create multiple datasets for
+    <sly-field title="Result dataset" description="All selected items will be placed to a single dataset. To create multiple datasets for
                    different subsets of selected items do the following: select items -> import to one dataset, then select another items
-                    -> import them to another dataset, and so on ..."
-    >
+                    -> import them to another dataset, and so on ...">
       <div class="fflex">
-        <el-radio
-          class="radio"
-          v-model="state.dstDatasetMode"
-          label="newDataset"
-          >Create new dataset</el-radio
-        >
-        <el-radio
-          class="radio"
-          v-model="state.dstDatasetMode"
-          label="existingDataset"
-          :disabled="state.dstProjectMode === 'newProject'"
-        >
+        <el-radio class="radio" v-model="state.dstDatasetMode" label="newDataset">Create new dataset</el-radio>
+        <el-radio class="radio" v-model="state.dstDatasetMode" label="existingDataset"
+          :disabled="state.dstProjectMode === 'newProject'">
           Add to existing dataset
         </el-radio>
       </div>
       <div class="mt5">
         <div v-if="state.dstDatasetMode === 'newDataset'">
-          <el-input
-            placeholder="Please input dataset name"
-            v-model="state.dstDatasetName"
-          ></el-input>
+          <el-input placeholder="Please input dataset name" v-model="state.dstDatasetName"></el-input>
           <div class="mt5" style="color: #5a6772">
-            <i
-              >If dataset with the same name already exists, a new name will be
-              generated automatically</i
-            >
+            <i>If dataset with the same name already exists, a new name will be
+              generated automatically</i>
           </div>
         </div>
         <div v-if="state.dstDatasetMode === 'existingDataset'">
-          <sly-select-dataset
-            :project-id="state.dstProjectId"
-            :datasets.sync="state.selectedDatasetName"
-            :options="{showLabel: false}"
-          >
+          <sly-select-dataset :project-id="state.dstProjectId" :datasets.sync="state.selectedDatasetName"
+            :options="{showLabel: false}">
           </sly-select-dataset>
         </div>
       </div>
     </sly-field>
-    <sly-field
-      v-if="state.addMode === 'addBylink'"
-      title="Notice: you chose to add remote files by link without actual data copying"
-      description="The app downloads image just once to preprocess and extract meta information. Then image file is removed from temp folder and from now
+    <sly-field v-if="state.addMode === 'addByLink'"
+      title="Notice: you chose to add remote files by link without actual data copying" description="The app downloads image just once to preprocess and extract meta information. Then image file is removed from temp folder and from now
                    Supervisely will stream it from your connected cloud storage directly to browser. If you have any issues with
-                   image display in browser, please, contact tech support."
-    >
+                   image display in browser, please, contact tech support.">
       <!--                color: '#20a0ff', bgColor: '#daecff'-->
-      <sly-icon
-        slot="icon"
-        :options="{ color: '#fba607', bgColor: '#ffe9da', rounded: false }"
-      >
+      <sly-icon slot="icon" :options="{ color: '#fba607', bgColor: '#ffe9da', rounded: false }">
         <i class="zmdi zmdi-info"></i>
       </sly-icon>
     </sly-field>
 
-    <el-button
-      class="regular mr10"
-      type="primary"
-      style="align-self: flex-end"
-      :loading="data.processing === true"
+    <el-button class="regular mr10" type="primary" style="align-self: flex-end" :loading="data.processing === true"
       :disabled="(state.dstProjectMode === 'newProject' && state.dstProjectName.length === 0) ||
                            (state.dstProjectMode === 'existingProject' && !state.dstProjectId) ||
                            (state.dstDatasetMode === 'newDataset' && state.dstDatasetName.length === 0) ||
                            (state.dstDatasetMode === 'existingDataset' && !state.selectedDatasetName)
-                           "
-      @click="data.processing = true; command('process')"
-    >
+                           " @click="data.processing = true; command('process')">
       <i class="zmdi zmdi-play mr5"></i> Start import
     </el-button>
-    <div
-      class="mt5"
-      v-if="state.dstProjectMode === 'newProject' && state.dstProjectName.length === 0"
-      style="color: red"
-    >
+    <div class="mt5" v-if="state.dstProjectMode === 'newProject' && state.dstProjectName.length === 0"
+      style="color: red">
       Please, define the name of a new project
     </div>
-    <div
-      class="mt5"
-      v-if="state.dstProjectMode === 'existingProject' && !state.dstProjectId"
-      style="color: red"
-    >
+    <div class="mt5" v-if="state.dstProjectMode === 'existingProject' && !state.dstProjectId" style="color: red">
       Please, select one of the existing projects
     </div>
-    <div
-      class="mt5"
-      v-if="state.dstDatasetMode === 'newDataset' && state.dstDatasetName.length === 0"
-      style="color: red"
-    >
+    <div class="mt5" v-if="state.dstDatasetMode === 'newDataset' && state.dstDatasetName.length === 0"
+      style="color: red">
       Please, define the name of a new dataset
     </div>
-    <div
-      class="mt5"
-      v-if="state.dstDatasetMode === 'existingDataset' && !state.selectedDatasetName"
-      style="color: red"
-    >
+    <div class="mt5" v-if="state.dstDatasetMode === 'existingDataset' && !state.selectedDatasetName" style="color: red">
       Please, select one of the existing datasets
     </div>
 
@@ -237,9 +140,7 @@
         {{data.progressName1}}: {{data.currentProgressLabel1}} /
         {{data.totalProgressLabel1}}
       </div>
-      <el-progress
-        :percentage="Math.round(data.currentProgress1 * 100 / data.totalProgress1)"
-      ></el-progress>
+      <el-progress :percentage="Math.round(data.currentProgress1 * 100 / data.totalProgress1)"></el-progress>
     </div>
   </sly-card>
 </div>
