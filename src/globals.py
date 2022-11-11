@@ -17,3 +17,4 @@ WORKSPACE_ID = int(os.environ["context.workspaceId"])
 
 USER_PREVIEW_LIMIT = 100
 FILE_SIZE = None
+BATCH_SIZE = 10000

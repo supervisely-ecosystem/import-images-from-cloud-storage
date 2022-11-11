@@ -196,14 +196,19 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     progress_items_cb = ui.get_progress_cb(
         api, task_id, 1, "Finished", len(remote_paths)
     )
+
+    if state["dstDatasetMode"] == "existingDataset":
+        all_images_names = {img_info.name for img_info in api.image.get_list(dataset_id=dataset.id, force_metadata_for_links=False)}
+    else:
+        all_images_names = set()
     for batch_remote_paths, batch_temp_paths, batch_local_paths in zip(
-        sly.batched(remote_paths), sly.batched(widget_paths), sly.batched(local_paths)
+        sly.batched(remote_paths, batch_size=g.BATCH_SIZE), sly.batched(widget_paths, batch_size=g.BATCH_SIZE), sly.batched(local_paths, batch_size=g.BATCH_SIZE)
     ):
         images_names = []
 
         for local_path in batch_local_paths:
             image_name = sly.fs.get_file_name_with_ext(local_path)
-            image_name = api.image.get_free_name(dataset.id, image_name)
+            image_name = sly.utils.generate_free_name(all_images_names, image_name, with_ext=True, extend_used_names=True)
             images_names.append(image_name)
 
         if state["addMode"] == "copyData":
@@ -238,6 +243,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                 dataset.id,
                 names=images_names,
                 links=batch_remote_paths,
+                batch_size=g.BATCH_SIZE,
                 force_metadata_for_links=state["forceMetadata"],
             )
         elif state["addMode"] == "copyData":
