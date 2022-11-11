@@ -1,5 +1,6 @@
-import supervisely as sly
 from functools import partial
+
+import supervisely as sly
 
 
 def init_context(data, team_id, workspace_id):

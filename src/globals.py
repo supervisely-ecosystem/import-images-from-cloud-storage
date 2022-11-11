@@ -1,8 +1,8 @@
 import os
 import sys
 from pathlib import Path
-import supervisely as sly
 
+import supervisely as sly
 # for debugging, has no effect in production
 from dotenv import load_dotenv
 

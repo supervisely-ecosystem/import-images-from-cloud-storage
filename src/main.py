@@ -1,8 +1,10 @@
 import os
-import ui
+
 import supervisely as sly
 
+import functions as f
 import globals as g
+import ui
 
 
 @g.app.callback("refresh_tree_viewer")
@@ -135,7 +137,6 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     # get all files from selected dirs
     if len(selected_dirs) > 0:
         g.FILE_SIZE = {}
-
         for dir_path in selected_dirs:
             full_dir_path = f"{state['provider']}://{dir_path.strip('/')}"
             files_cnt = 0
@@ -198,19 +199,14 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     )
 
     if state["dstDatasetMode"] == "existingDataset":
-        all_images_names = {img_info.name for img_info in api.image.get_list(dataset_id=dataset.id, force_metadata_for_links=False)}
+        ds_images_names = [img_info.name for img_info in api.image.get_list(dataset_id=dataset.id, force_metadata_for_links=False)]
+        res_names = f.get_images_names_from_paths(local_paths=local_paths, used_names=ds_images_names)
     else:
-        all_images_names = set()
-    for batch_remote_paths, batch_temp_paths, batch_local_paths in zip(
+        res_names = f.get_images_names_from_paths(local_paths=local_paths)
+
+    for batch_names, batch_remote_paths, batch_temp_paths, batch_local_paths in zip(sly.batched(res_names, batch_size=g.BATCH_SIZE),
         sly.batched(remote_paths, batch_size=g.BATCH_SIZE), sly.batched(widget_paths, batch_size=g.BATCH_SIZE), sly.batched(local_paths, batch_size=g.BATCH_SIZE)
     ):
-        images_names = []
-
-        for local_path in batch_local_paths:
-            image_name = sly.fs.get_file_name_with_ext(local_path)
-            image_name = sly.utils.generate_free_name(all_images_names, image_name, with_ext=True, extend_used_names=True)
-            images_names.append(image_name)
-
         if state["addMode"] == "copyData":
             for remote_path, temp_path, local_path in zip(
                 batch_remote_paths, batch_temp_paths, batch_local_paths
@@ -241,16 +237,16 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         if state["addMode"] == "addByLink":
             api.image.upload_links(
                 dataset.id,
-                names=images_names,
+                names=batch_names,
                 links=batch_remote_paths,
                 batch_size=g.BATCH_SIZE,
                 force_metadata_for_links=state["forceMetadata"],
             )
         elif state["addMode"] == "copyData":
             api.image.upload_paths(
-                dataset.id, names=images_names, paths=batch_local_paths
+                dataset.id, names=batch_names, paths=batch_local_paths
             )
-        progress_items_cb(len(images_names))
+        progress_items_cb(len(batch_names))
 
     ui.reset_progress(api, task_id, 1)
     ui.reset_progress(api, task_id, 2)
