@@ -254,6 +254,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                 links=batch_remote_paths,
                 batch_size=g.BATCH_SIZE,
                 force_metadata_for_links=state["forceMetadata"],
+                skip_validation=True,
             )
         elif state["addMode"] == "copyData":
             api.image.upload_paths(
