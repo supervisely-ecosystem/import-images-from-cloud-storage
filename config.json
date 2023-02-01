@@ -3,7 +3,7 @@
   "type": "app",
   "categories": ["import", "images"],
   "description": "Import images from cloud (Google Cloud Storage, Amazon S3, Microsoft Azure, ...)",
-  "docker_image": "supervisely/base-py-sdk:6.68.80",
+  "docker_image": "supervisely/base-py-sdk:6.69.27",
   "main_script": "src/main.py",
   "gui_template": "src/gui.html",
   "task_location": "workspace_tasks",

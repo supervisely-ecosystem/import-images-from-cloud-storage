@@ -1,1 +1,6 @@
-supervisely==6.68.80
+supervisely==6.69.27
+
+#formatter
+black
+#sorter
+isort
