@@ -163,6 +163,9 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     # get other selected files
     for path in paths:
         if sly.fs.get_file_ext(path) != "":
+            full_remote_path = f"{state['provider']}://{path.lstrip('/')}"
+            file = api.remote_storage.get_file_info_by_path(path=full_remote_path)
+            g.FILE_SIZE[path] = file["size"]
             _add_to_processing_list(path)
 
     if len(local_paths) == 0:
