@@ -8,6 +8,7 @@ import ui
 
 import time
 
+
 @g.app.callback("refresh_tree_viewer")
 @sly.timeit
 def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
@@ -16,9 +17,7 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
 
     path = f"{state['provider']}://{new_path.strip('/')}"
     try:
-        files = api.remote_storage.list(
-            path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1
-        )
+        files = api.remote_storage.list(path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1)
     except Exception as e:
         sly.logger.warn(repr(e))
         g.app.show_modal_window(
@@ -34,11 +33,7 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
         api.task.set_fields(task_id, fields)
         return
 
-    files = [
-        f
-        for f in files
-        if f["type"] == "folder" or (f["type"] == "file" and f["size"] > 0)
-    ]
+    files = [f for f in files if f["type"] == "folder" or (f["type"] == "file" and f["size"] > 0)]
 
     if len(files) > g.USER_PREVIEW_LIMIT:
         files.pop()
@@ -66,9 +61,7 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
 
     path = f"{state['provider']}://{state['bucketName']}"
     try:
-        files = api.remote_storage.list(
-            path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1
-        )
+        files = api.remote_storage.list(path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1)
     except Exception as e:
         sly.logger.warn(repr(e))
         g.app.show_modal_window(
@@ -83,11 +76,7 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
         api.task.set_fields(task_id, fields)
         return
 
-    files = [
-        f
-        for f in files
-        if f["type"] == "folder" or (f["type"] == "file" and f["size"] > 0)
-    ]
+    files = [f for f in files if f["type"] == "folder" or (f["type"] == "file" and f["size"] > 0)]
 
     if len(files) > g.USER_PREVIEW_LIMIT:
         files.pop()
@@ -142,13 +131,12 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         for dir_path in selected_dirs:
             full_dir_path = f"{state['provider']}://{dir_path.strip('/')}"
             files_cnt = 0
+
             for file in list_objects(api, full_dir_path):
                 if file["size"] <= 0:
                     continue
 
-                path = os.path.join(
-                    f"/{state['bucketName']}", file["prefix"], file["name"]
-                )
+                path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
                 g.FILE_SIZE[path] = file["size"]
                 files_cnt += 1
                 if files_cnt % 10000 == 0:
@@ -200,29 +188,39 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         return
 
     if state["dstDatasetMode"] == "existingDataset":
-        all_images_names = {img_info.name for img_info in api.image.get_list(dataset_id=dataset.id, force_metadata_for_links=False)}
+        all_images_names = {
+            img_info.name
+            for img_info in api.image.get_list(
+                dataset_id=dataset.id, force_metadata_for_links=False
+            )
+        }
     else:
         all_images_names = set()
-        
+
     if state["addMode"] == "copyData":
         g.BATCH_SIZE = 50
-            
-    progress_items_cb = ui.get_progress_cb(
-        api, task_id, 1, "Finished", len(remote_paths)
-    )
-    
+
+    progress_items_cb = ui.get_progress_cb(api, task_id, 1, "Finished", len(remote_paths))
+
     free_name_time = 0
     for batch_remote_paths, batch_temp_paths, batch_local_paths in zip(
-        sly.batched(remote_paths, batch_size=g.BATCH_SIZE), sly.batched(widget_paths, batch_size=g.BATCH_SIZE), sly.batched(local_paths, batch_size=g.BATCH_SIZE)
+        sly.batched(remote_paths, batch_size=g.BATCH_SIZE),
+        sly.batched(widget_paths, batch_size=g.BATCH_SIZE),
+        sly.batched(local_paths, batch_size=g.BATCH_SIZE),
     ):
         start_name_generation = time.time()
         images_names = []
         for local_path in batch_local_paths:
             image_name = sly.fs.get_file_name_with_ext(local_path)
-            image_name = f.generate_free_name(used_names=all_images_names, possible_name=image_name, with_ext=True, extend_used_names=True)
+            image_name = f.generate_free_name(
+                used_names=all_images_names,
+                possible_name=image_name,
+                with_ext=True,
+                extend_used_names=True,
+            )
             images_names.append(image_name)
         free_name_time += time.time() - start_name_generation
-        
+
         if state["addMode"] == "copyData":
             for remote_path, temp_path, local_path in zip(
                 batch_remote_paths, batch_temp_paths, batch_local_paths
@@ -236,9 +234,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                     is_size=True,
                 )
 
-                api.remote_storage.download_path(
-                    remote_path, local_path, progress_file_cb
-                )
+                api.remote_storage.download_path(remote_path, local_path, progress_file_cb)
                 temp_cb = ui.get_progress_cb(
                     api,
                     task_id,
@@ -260,15 +256,13 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                 skip_validation=True,
             )
         elif state["addMode"] == "copyData":
-            api.image.upload_paths(
-                dataset.id, names=images_names, paths=batch_local_paths
-            )
+            api.image.upload_paths(dataset.id, names=images_names, paths=batch_local_paths)
         progress_items_cb(len(images_names))
 
     ui.reset_progress(api, task_id, 1)
     ui.reset_progress(api, task_id, 2)
-    print("Name generation time --- %s seconds ---" % (free_name_time))
-    print("Total time --- %s seconds ---" % (time.time() - start_time))
+    print(f"Name generation time --- {free_name_time} seconds ---")
+    print(f"Total time --- {time.time() - start_time} seconds ---")
     g.app.show_modal_window(
         f'{len(remote_paths)} images has been successfully imported to the project "{project.name}"'
         f', dataset "{dataset.name}". You can continue importing other images to the same or new '
@@ -288,6 +282,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 
 def list_objects(api, full_dir_path):
     start_after = None
+    last_obj = None
     while True:
         remote_objs = api.remote_storage.list(
             path=full_dir_path,
@@ -298,6 +293,9 @@ def list_objects(api, full_dir_path):
         )
         if len(remote_objs) == 0:
             break
+        if last_obj is not None:
+            if remote_objs[-1] == last_obj:
+                break
         last_obj = remote_objs[-1]
         start_after = f'{last_obj["prefix"]}/{last_obj["name"]}'
         yield from remote_objs
