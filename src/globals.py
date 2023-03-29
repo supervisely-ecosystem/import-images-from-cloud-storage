@@ -3,11 +3,12 @@ import sys
 from pathlib import Path
 
 import supervisely as sly
+
 # for debugging, has no effect in production
 from dotenv import load_dotenv
 
-load_dotenv(os.path.expanduser("~/supervisely.env"))
-load_dotenv("debug.env")
+load_dotenv(os.path.expanduser("~/supervisely_umar.env"))
+load_dotenv("local.env")
 
 app: sly.AppService = sly.AppService()
 app_sources_dir = str(Path(sys.argv[0]).parents[1])
