@@ -9,7 +9,7 @@ def init_context(data, team_id, workspace_id):
 
 
 def init_connection(data, state):
-    state["provider"] = ""  # s3
+    state["provider"] = "s3"  # s3
     state["bucketName"] = ""  # "bucket-test-export"  # "remote-img-test"
     state["selected"] = ""
     state["viewerLoading"] = False
