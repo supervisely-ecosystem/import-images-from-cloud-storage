@@ -51,9 +51,9 @@ processed, it will be removed from temp directory. This is the one time procedur
 Watch short video for more details:
 
 <a data-key="sly-embeded-video-link" href="https://youtu.be/LJRA84FXHl4" data-video-code="LJRA84FXHl4">
-    <img src="https://i.imgur.com/x4aSTNH.png" alt="SLY_EMBEDED_VIDEO_LINK"  style="max-width:500px;">
+    <img src="media/vid.png" alt="SLY_EMBEDED_VIDEO_LINK"  style="max-width:500px;">
 </a>
 
 # Screenshot
 
-<img src="https://i.imgur.com/qnmDX5w.png"/>
+<img src="media/s.png"/>
