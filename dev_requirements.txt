@@ -1,0 +1,6 @@
+supervisely==6.72.55
+
+#formatter
+black
+#sorter
+isort
