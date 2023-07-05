@@ -7,7 +7,7 @@
   "main_script": "src/main.py",
   "gui_template": "src/gui.html",
   "task_location": "workspace_tasks",
-  "icon": "https://i.imgur.com/WDnwFzX.png",
+  "icon": "media/icon.png",
   "icon_background": "#FFFFFF",
   "disable_stop": true,
   "instance_version": "6.6.8",
