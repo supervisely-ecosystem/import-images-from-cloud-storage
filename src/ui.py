@@ -1,6 +1,10 @@
 from functools import partial
-
 import supervisely as sly
+import globals as g
+
+
+# def get_available_providers_list():
+# available_providers = g.api.remote_storage.get_list_available_providers()
 
 
 def init_context(data, team_id, workspace_id):
@@ -9,8 +13,24 @@ def init_context(data, team_id, workspace_id):
 
 
 def init_connection(data, state):
-    state["provider"] = "s3"  # s3
-    state["bucketName"] = ""  # "bucket-test-export"  # "remote-img-test"
+    providers_info = g.api.remote_storage.get_list_available_providers()
+    providers = [provider["defaultProtocol"].rstrip(":") for provider in providers_info]
+    state["availableProviders"] = {
+        provider["defaultProtocol"].rstrip(":"): provider["name"] for provider in providers_info
+    }
+
+    data["availableBuckets"] = {
+        provider["defaultProtocol"].rstrip(":"): provider["buckets"] for provider in providers_info
+    }
+
+    if len(providers) == 0:
+        state["provider"] = ""
+        state["buckets"] = []
+    else:
+        state["provider"] = providers[0]  # s3 google azure fs
+        state["buckets"] = data["availableBuckets"][providers[0]]
+
+    state["bucketName"] = ""  # "bucket-test-export" "remote-img-test"
     state["selected"] = ""
     state["viewerLoading"] = False
     data["tree"] = None

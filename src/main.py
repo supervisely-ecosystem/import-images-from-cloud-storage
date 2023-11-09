@@ -43,7 +43,8 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
 
     tree_items = []
     for file in files:
-        path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
+        bucket_name = state["bucketName"].split("/")[0]
+        path = os.path.join(f"/{bucket_name}", file["prefix"], file["name"])
         tree_items.append({"path": path, "size": file["size"], "type": file["type"]})
         g.FILE_SIZE[path] = file["size"]
 
@@ -86,7 +87,9 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
 
     tree_items = []
     for file in files:
-        path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
+        path = os.path.join(
+            f"/{state['bucketName']}", file["name"]
+        )  # file["prefix"], file["name"])
         tree_items.append({"path": path, "size": file["size"], "type": file["type"]})
         g.FILE_SIZE[path] = file["size"]
 
