@@ -12,6 +12,7 @@
 					v-model="state.provider"
 					@change="state.buckets = data.availableBuckets[state.provider]; state.bucketName = '';"
 					placeholder="Select cloud provider"
+					no-data-text="No connected cloud providers"
 				>
 					<el-option
 						v-for="(v, k) in state.availableProviders"
@@ -22,7 +23,10 @@
 					</el-option>
 				</el-select>
 			</sly-field>
-			<sly-field title="Bucket name" style="flex: 1; margin: 0 10px 0 0">
+			<sly-field
+				:title="state.provider === 'fs' ? 'Storage ID' : 'Bucket name'"
+				style="flex: 1; margin: 0 10px 0 0"
+			>
 				<el-select
 					v-model="state.bucketName"
 					placeholder="Select cloud provider"
@@ -61,7 +65,7 @@
 	<sly-card
 		v-if="data.tree"
 		class="mt10"
-		title="2. Preview bucket and select items"
+		title="2. Preview and select items"
 		subtitle="All selected image/directories will be imported"
 	>
 		<sly-file-viewer

@@ -23,12 +23,13 @@ def init_connection(data, state):
         provider["defaultProtocol"].rstrip(":"): provider["buckets"] for provider in providers_info
     }
 
-    # add fs provider
-    # state["availableProviders"].append("fs")
-    # data["availableBuckets"].update({"fs": []})
+    if len(providers) == 0:
+        state["provider"] = ""
+        state["buckets"] = []
+    else:
+        state["provider"] = providers[0]  # s3 google azure fs
+        state["buckets"] = data["availableBuckets"][providers[0]]
 
-    state["provider"] = providers[0]  # .keys[0]  # s3 google azure
-    state["buckets"] = data["availableBuckets"][providers[0]]
     state["bucketName"] = ""  # "bucket-test-export" "remote-img-test"
     state["selected"] = ""
     state["viewerLoading"] = False
