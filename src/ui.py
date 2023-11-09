@@ -27,7 +27,7 @@ def init_connection(data, state):
     # state["availableProviders"].append("fs")
     # data["availableBuckets"].update({"fs": []})
 
-    state["provider"] = state["availableProviders"][providers[0]]  # .keys[0]  # s3 google azure
+    state["provider"] = providers[0]  # .keys[0]  # s3 google azure
     state["buckets"] = data["availableBuckets"][providers[0]]
     state["bucketName"] = ""  # "bucket-test-export" "remote-img-test"
     state["selected"] = ""
