@@ -13,9 +13,15 @@ def init_context(data, team_id, workspace_id):
 
 
 def init_connection(data, state):
-    all_providers_info = g.api.remote_storage.get_list_supported_providers()
+    try:
+        all_providers_info = g.api.remote_storage.get_list_supported_providers()
+    except:
+        all_providers_info = []
 
-    providers_info = g.api.remote_storage.get_list_available_providers()
+    try:
+        providers_info = g.api.remote_storage.get_list_available_providers()
+    except:
+        providers_info = []
     providers = [provider["defaultProtocol"].rstrip(":") for provider in providers_info]
 
     provider_items = []
