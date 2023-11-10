@@ -13,11 +13,42 @@ def init_context(data, team_id, workspace_id):
 
 
 def init_connection(data, state):
-    providers_info = g.api.remote_storage.get_list_available_providers()
+    try:
+        all_providers_info = g.api.remote_storage.get_list_supported_providers()
+    except:
+        all_providers_info = []
+
+    try:
+        providers_info = g.api.remote_storage.get_list_available_providers()
+    except:
+        providers_info = []
     providers = [provider["defaultProtocol"].rstrip(":") for provider in providers_info]
-    state["availableProviders"] = {
-        provider["defaultProtocol"].rstrip(":"): provider["name"] for provider in providers_info
-    }
+
+    provider_items = []
+    disabled_items = []
+    disabled_items_names = []
+    for provider in all_providers_info:
+        if provider["defaultProtocol"].rstrip(":") in providers:
+            item = {
+                "value": provider["defaultProtocol"].rstrip(":"),
+                "label": provider["name"],
+                "disabled": False,
+            }
+            provider_items.append(item)
+        else:
+            item = {
+                "value": provider["defaultProtocol"].rstrip(":"),
+                "label": provider["name"],
+                "disabled": True,
+            }
+            disabled_items.append(item)
+            disabled_items_names.append(item["label"])
+
+    provider_items.extend(disabled_items)
+
+    state["availableProviders"] = provider_items
+    state["unavailableProviders"] = disabled_items
+    state["unavailableProvidersNames"] = disabled_items_names
 
     data["availableBuckets"] = {
         provider["defaultProtocol"].rstrip(":"): provider["buckets"] for provider in providers_info
@@ -36,6 +67,39 @@ def init_connection(data, state):
     data["tree"] = None
     data["connecting"] = False
     state["viewerPath"] = ""
+
+    data["notificationBox"] = {
+        "options": {"type": "info", "showIcon": False, "colorize": False, "hideBorder": True}
+    }
+    if len(provider_items) == 0:
+        data["notificationMessage"] = {
+            "title": "Cloud Storage Connection Required",
+            "description1": (
+                "No cloud storage providers are configured. Set up a provider in the instance settings to proceed. "
+                "Please connect a provider to your instance using this "
+            ),
+            "description2": (
+                "You can connect Amazon S3, Microsoft Azure, Google Cloud Storage or any S3 compatible providers. "
+                "If you have any questions, please contact tech support."
+            ),
+            "box_type": "info",
+        }
+
+    elif len(disabled_items) > 0:
+        data["notificationMessage"] = {
+            "title": "Configure Cloud Storage provider in the instance settings",
+            "description1": (
+                "You can set up a new provider in the instance settings. "
+                "To connect a new provider to your instance follow this "
+            ),
+            "description2": (
+                f"You can connect {', '.join(disabled_items_names)} or any S3 compatible providers. "
+                "If you have any questions, please contact tech support."
+            ),
+            "box_type": "info",
+        }
+    else:
+        data["notificationMessage"] = None
 
 
 def init_options(data, state):
