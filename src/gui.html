@@ -84,6 +84,16 @@
 				<i class="zmdi zmdi-cloud mr5"></i> Connect
 			</el-button>
 		</div>
+
+		<div v-if="state.buckets.length === 0">
+			<i
+				class="zmdi zmdi-alert-triangle"
+				style="margin-right: 5px; color: #ffa500"
+			></i>
+			<span style="color: #5a6772">
+				<span>You don't have any available buckets in this cloud storage</span>
+			</span>
+		</div>
 	</sly-card>
 
 	<sly-card
