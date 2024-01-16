@@ -106,7 +106,7 @@
 			v-loading="state.viewerLoading"
 			:list="data.tree"
 			v-model="state.selected"
-			:options="{flatMode: true}"
+			:options="{flatMode: true, extendedSelection: true}"
 			@change="(evt) => { if (evt.type !== 'folder') return; state.viewerPath = evt.path; state.viewerLoading = true; command('refresh_tree_viewer') }"
 		/>
 	</sly-card>

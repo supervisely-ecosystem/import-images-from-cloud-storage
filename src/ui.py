@@ -65,7 +65,7 @@ def init_connection(data, state):
         state["buckets"] = data["availableBuckets"][providers[0]]
 
     state["bucketName"] = ""  # "bucket-test-export" "remote-img-test"
-    state["selected"] = ""
+    state["selected"] = []
     state["viewerLoading"] = False
     data["tree"] = None
     data["connecting"] = False

@@ -124,9 +124,9 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     # find selected dirs
     selected_dirs = []
     for path in paths:
-        if sly.fs.get_file_ext(path) == "":
+        if path["type"] == "folder":
             # path to directory
-            selected_dirs.append(path)
+            selected_dirs.append(path["path"])
 
     # get all files from selected dirs
     if len(selected_dirs) > 0:
@@ -153,15 +153,15 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 
     # get other selected files
     for path in paths:
-        if sly.fs.get_file_ext(path) != "":
-            full_remote_path = f"{state['provider']}://{path.lstrip('/')}"
+        if path["type"] == "file":
+            full_remote_path = f"{state['provider']}://{path['path'].lstrip('/')}"
             try:
                 file = api.remote_storage.get_file_info_by_path(path=full_remote_path)
             except Exception as e:
                 sly.logger.warn(f"Couldn't process file path: {full_remote_path}. Error: {e}")
                 continue
-            g.FILE_SIZE[path] = file["size"]
-            _add_to_processing_list(path)
+            g.FILE_SIZE[path["path"]] = file["size"]
+            _add_to_processing_list(path["path"])
 
     if len(local_paths) == 0:
         g.app.show_modal_window("There are no images to import", "warning")
