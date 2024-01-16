@@ -155,7 +155,11 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     for path in paths:
         if sly.fs.get_file_ext(path) != "":
             full_remote_path = f"{state['provider']}://{path.lstrip('/')}"
-            file = api.remote_storage.get_file_info_by_path(path=full_remote_path)
+            try:
+                file = api.remote_storage.get_file_info_by_path(path=full_remote_path)
+            except Exception as e:
+                sly.logger.warn(f"Couldn't process file path: {full_remote_path}. Error: {e}")
+                continue
             g.FILE_SIZE[path] = file["size"]
             _add_to_processing_list(path)
 
