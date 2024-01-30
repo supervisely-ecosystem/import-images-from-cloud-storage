@@ -30,7 +30,11 @@
 		</sly-notification-2>
 
 		<div class="fflex">
-			<sly-field title="Provider" style="margin: 0 10px 0 0">
+			<sly-field
+				title="Provider"
+				description="Select provider"
+				style="margin: 0 10px 0 0"
+			>
 				<el-select
 					v-model="state.provider"
 					@change="state.buckets = data.availableBuckets[state.provider]; state.bucketName = '';"
@@ -49,6 +53,7 @@
 			</sly-field>
 			<sly-field
 				:title="state.provider === 'fs' ? 'Storage ID' : 'Bucket name'"
+				description="Enter the path starting with a bucket name to the directory that you want to access"
 				style="flex: 1; margin: 0 10px 0 0"
 			>
 				<el-select
