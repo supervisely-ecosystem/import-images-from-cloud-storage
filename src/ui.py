@@ -50,12 +50,14 @@ def init_connection(data, state):
     state["unavailableProviders"] = disabled_items
     state["unavailableProvidersNames"] = disabled_items_names
 
-    data["availableBuckets"] = {}
+    data["availableBuckets"] = {
+        provider["defaultProtocol"].rstrip(":"): [] for provider in providers_info
+    }
     for provider in providers_info:
         if provider.get("buckets") is not None:
-            data["availableBuckets"][provider["defaultProtocol"].rstrip(":")] = provider["buckets"]
-        else:
-            data["availableBuckets"][provider["defaultProtocol"].rstrip(":")] = []
+            data["availableBuckets"][provider["defaultProtocol"].rstrip(":")].extend(
+                provider["buckets"]
+            )
 
     if len(providers) == 0:
         state["provider"] = ""
