@@ -2,10 +2,10 @@ import os
 
 import supervisely as sly
 
-import functions as f
 import globals as g
 import ui
 
+import workflow as wf
 import time
 
 
@@ -219,7 +219,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         images_names = []
         for local_path in batch_local_paths:
             image_name = sly.fs.get_file_name_with_ext(local_path)
-            image_name = f.generate_free_name(
+            image_name = sly.utils.generate_free_name(
                 used_names=all_images_names,
                 possible_name=image_name,
                 with_ext=True,
@@ -277,6 +277,10 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     )
     api.app.set_field(task_id, "data.processing", False)
     api.task.set_output_project(task_id, project.id, project.name)
+    # -------------------------------------- Add Workflow Output ------------------------------------- #
+    workflow = wf.Workflow(api)
+    workflow.add_output(project.id)
+    # ----------------------------------------------- - ---------------------------------------------- #
 
 
 # TODO
