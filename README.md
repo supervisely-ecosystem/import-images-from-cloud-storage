@@ -9,11 +9,11 @@
 </p>
 
 
-[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervise.ly/apps/supervisely-ecosystem/import-images-from-cloud-storage)
-[![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervise.ly/slack)
+[![](https://img.shields.io/badge/supervisely-ecosystem-brightgreen)](https://ecosystem.supervisely.com/apps/supervisely-ecosystem/import-images-from-cloud-storage)
+[![](https://img.shields.io/badge/slack-chat-green.svg?logo=slack)](https://supervisely.com/slack)
 ![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/supervisely-ecosystem/import-images-from-cloud-storage)
-[![views](https://app.supervise.ly/img/badges/views/supervisely-ecosystem/import-images-from-cloud-storage.png)](https://supervise.ly)
-[![runs](https://app.supervise.ly/img/badges/runs/supervisely-ecosystem/import-images-from-cloud-storage.png)](https://supervise.ly)
+[![views](https://app.supervisely.com/img/badges/views/supervisely-ecosystem/import-images-from-cloud-storage.png)](https://supervisely.com)
+[![runs](https://app.supervisely.com/img/badges/runs/supervisely-ecosystem/import-images-from-cloud-storage.png)](https://supervisely.com)
 
 </div>
 
@@ -38,8 +38,8 @@ processed, it will be removed from temp directory. This is the one time procedur
 # How To Use
 
 0. Ask your instance administrator to add cloud credentials to instance settings. It can be done both in .env
-   configuration files or in Admin UI dashboard. Learn more in docs: [link1](https://docs.supervise.ly/enterprise-edition/installation/post-installation#configure-your-instance), 
-   [link2](https://docs.supervise.ly/enterprise-edition/advanced-tuning/s3#links-plugin-cloud-providers-support).
+   configuration files or in Admin UI dashboard. Learn more in docs: [link1](https://docs.supervisely.com/enterprise-edition/installation/post-installation#configure-your-instance), 
+   [link2](https://docs.supervisely.com/enterprise-edition/advanced-tuning/s3#links-plugin-cloud-providers-support).
    In case of any questions or issues, please contact tech support.
 1. Add app to your team from Ecosystem
 2. Run app from `Team Apps` Page
