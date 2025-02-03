@@ -17,7 +17,7 @@ def refresh_tree_viewer(api: sly.Api, task_id, context, state, app_logger):
 
     path = f"{state['provider']}://{new_path.strip('/')}"
     try:
-        files = api.remote_storage.list(path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1)
+        files = api.remote_storage.list(path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1, team_id=g.TEAM_ID)
     except Exception as e:
         sly.logger.warn(repr(e))
         g.app.show_modal_window(
@@ -62,7 +62,7 @@ def preview(api: sly.Api, task_id, context, state, app_logger):
 
     path = f"{state['provider']}://{state['bucketName']}"
     try:
-        files = api.remote_storage.list(path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1)
+        files = api.remote_storage.list(path, recursive=False, limit=g.USER_PREVIEW_LIMIT + 1, team_id=g.TEAM_ID)
     except Exception as e:
         sly.logger.warn(repr(e))
         g.app.show_modal_window(
@@ -156,7 +156,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         if path["type"] == "file":
             full_remote_path = f"{state['provider']}://{path['path'].lstrip('/')}"
             try:
-                file = api.remote_storage.get_file_info_by_path(path=full_remote_path)
+                file = api.remote_storage.get_file_info_by_path(path=full_remote_path, team_id=g.TEAM_ID)
             except Exception as e:
                 sly.logger.warn(f"Couldn't process file path: '{full_remote_path}'. Error: {e}")
                 continue
@@ -241,7 +241,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                     is_size=True,
                 )
 
-                api.remote_storage.download_path(remote_path, local_path, progress_file_cb)
+                api.remote_storage.download_path(remote_path, local_path, progress_file_cb, team_id=g.TEAM_ID)
                 temp_cb = ui.get_progress_cb(
                     api,
                     task_id,
@@ -301,6 +301,7 @@ def list_objects(api, full_dir_path):
             folders=False,
             recursive=True,
             start_after=start_after,
+            team_id=g.TEAM_ID,
         )
         if len(remote_objs) == 0:
             break
