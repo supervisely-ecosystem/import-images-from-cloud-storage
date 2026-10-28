@@ -60,7 +60,6 @@ class FakeRemoteStorage:
              start_after="", team_id=None):
         self.list_calls += 1
         provider, rest = self._split(path.rstrip("/") + "/")
-        bucket = rest.split("/", 1)[0]
         keys = sorted(k for k in self.objects if k.startswith(rest))
         result = []
         seen_folders = set()
