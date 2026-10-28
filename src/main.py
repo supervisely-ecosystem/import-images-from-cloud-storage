@@ -110,8 +110,16 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     widget_paths = []
     local_paths = []
 
+    added_paths = set()
+    # "Bucket name" may be a path that starts with the bucket name ("bucket/sub/dir"), while
+    # listed objects have a prefix relative to the bucket root.
+    bucket_name = state["bucketName"].strip("/").split("/")[0]
+
     def _add_to_processing_list(path):
         nonlocal remote_paths, local_paths
+        if path in added_paths:  # a file selected both directly and inside a selected folder
+            return
+        added_paths.add(path)
         if sly.image.has_valid_ext(path) is False:
             sly.logger.warning(f"Unsupported image extension for path: {path}")
             return
@@ -141,7 +149,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                 if file["size"] <= 0:
                     continue
 
-                path = os.path.join(f"/{state['bucketName']}", file["prefix"], file["name"])
+                path = posixpath.join(f"/{bucket_name}", file["prefix"], file["name"])
                 g.FILE_SIZE[path] = file["size"]
                 files_cnt += 1
                 if files_cnt % 10000 == 0:
