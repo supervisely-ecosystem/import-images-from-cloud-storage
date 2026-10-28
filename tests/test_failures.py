@@ -82,3 +82,11 @@ def test_success_message_counts_skipped_files(app):
     (message, level), = g.app.modals
     assert level == "info" and "1 images" in message and "1 file(s) skipped" in message
     assert api.fields.get("data.processing") is False
+
+
+def test_selected_file_gone_is_a_failure(app):
+    api = FakeApi(FILES)
+    state = make_state([("/bkt/x/1.jpg", "file"), ("/bkt/x/deleted.jpg", "file")])
+    main, g, error = app(api, state)
+    assert api.datasets[api.created_datasets[0]] == ["1.jpg"]
+    assert error is not None and "/bkt/x/deleted.jpg" in str(error) and "1 of 2" in str(error)

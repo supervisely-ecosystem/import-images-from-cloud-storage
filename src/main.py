@@ -164,13 +164,17 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                 _add_to_processing_list(path)
 
     # get other selected files
+    if g.FILE_SIZE is None:
+        g.FILE_SIZE = {}
+    not_found = []  # selected files that are gone: (path, reason)
     for path in paths:
         if path["type"] == "file":
             full_remote_path = f"{state['provider']}://{path['path'].lstrip('/')}"
             try:
                 file = api.remote_storage.get_file_info_by_path(path=full_remote_path, team_id=g.TEAM_ID)
-            except Exception as e:
+            except Exception as e:  # the SDK raises IndexError when nothing is found
                 sly.logger.warn(f"Couldn't process file path: '{full_remote_path}'. Error: {e}")
+                not_found.append((path["path"], "not found in the storage"))
                 continue
             g.FILE_SIZE[path["path"]] = file["size"]
             _add_to_processing_list(path["path"])
@@ -206,7 +210,8 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     progress_items_cb = ui.get_progress_cb(api, task_id, 1, "Finished", len(remote_paths))
 
     imported = 0
-    failed = []  # (path shown in the viewer, reason)
+    failed = list(not_found)  # (path shown in the viewer, reason)
+    planned = len(remote_paths) + len(not_found)
     free_name_time = 0
     for batch_remote_paths, batch_temp_paths, batch_local_paths in zip(
         sly.batched(remote_paths, batch_size=g.BATCH_SIZE),
@@ -289,14 +294,14 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     sly.logger.info(f"Total time --- {time.time() - start_time} seconds ---")
     sly.logger.info(
         "Import summary",
-        extra={"planned": len(remote_paths), "imported": imported, "failed": len(failed),
+        extra={"planned": planned, "imported": imported, "failed": len(failed),
                "skipped_unsupported": len(skipped_unsupported)},
     )
 
     if imported == 0:
         remove_if_empty(api, created)
         message = (
-            f"No images were imported: all {len(remote_paths)} selected images failed. "
+            f"No images were imported: all {planned} selected images failed. "
             + describe_failures(failed)
         )
         g.app.show_modal_window(message, "error")
@@ -310,7 +315,7 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 
     if failed:
         message = (
-            f"Import is incomplete: {len(failed)} of {len(remote_paths)} images failed, "
+            f"Import is incomplete: {len(failed)} of {planned} images failed, "
             f'{imported} were imported to the project "{project.name}", dataset "{dataset.name}". '
             + describe_failures(failed)
         )
