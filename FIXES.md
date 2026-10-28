@@ -120,3 +120,11 @@ On this branch `config.json` uses `supervisely/import-images-from-cloud-storage:
 `dev_requirements.txt`, and only if the tag is not on Docker Hub yet. Dev agents pull images "if not present", so
 every dependency change gets a new tag. **Before merging, set `docker_image` back to `supervisely/import-images-from-cloud-storage:6.74.34`**; `release.yml`
 builds that tag on the version release.
+
+## Process exit on Python 3.14 (2026-10-28)
+
+`AppService._shutdown` releases executor threads through `thread._tstate_lock`, which Python 3.13+ no longer has.
+The consumer thread stays blocked on the agent stream, and the interpreter waits for it at exit. This was seen on dev
+in import-dicom-studies, where the task stayed `started` after a finished import. Here the same would keep the
+container alive after the session is stopped. The app now ends with `os._exit(0)` after `main_wrapper`, which
+already uses `os._exit(1)` on errors. `tests/test_exit.py` reproduces the hang in a subprocess.
