@@ -1,6 +1,4 @@
 supervisely==6.74.34
-
-#formatter
-black
-#sorter
-isort
+# the legacy AppService runtime (gui_template) reads agent events as protobuf messages;
+# the SDK pins it to <=3.20.3 (its "agent" extra) and base-py-sdk-hardened does not include it
+protobuf==3.20.3

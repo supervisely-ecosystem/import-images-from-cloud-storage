@@ -6,7 +6,15 @@ on:
       - main
       - master
 jobs:
+  # the app image (supervisely/<repo>:<sdk>) must exist before a branch release can run;
+  # the build is skipped when the tag is already on Docker Hub
+  build-image:
+    uses: supervisely-ecosystem/workflows/.github/workflows/build_image_from_template.yml@master
+    with:
+      image_name: "${{ github.event.repository.name }}"
+      cve_checks: false
   Supervisely-Release:
+    needs: build-image
     uses: supervisely-ecosystem/workflows/.github/workflows/common.yml@master
     secrets:
       SUPERVISELY_DEV_API_TOKEN: "${{ secrets.SUPERVISELY_DEV_API_TOKEN }}"
