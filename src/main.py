@@ -135,8 +135,15 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 
     # find selected dirs
     selected_dirs = []
+    not_found = []  # selected items that can not be imported: (path, reason)
     for path in paths:
         if path["type"] == "folder":
+            if "/" not in path["path"].strip("/"):
+                # A folder with an empty name (keys that start with "/") is shown as
+                # "/<bucket>/"; listing it would list - and import - the whole bucket.
+                sly.logger.warning(f"Folder with an empty name is skipped: {path['path']!r}")
+                not_found.append((path["path"], "a folder with an empty name can not be listed"))
+                continue
             # path to directory
             selected_dirs.append(path["path"])
 
@@ -166,7 +173,6 @@ def process(api: sly.Api, task_id, context, state, app_logger):
     # get other selected files
     if g.FILE_SIZE is None:
         g.FILE_SIZE = {}
-    not_found = []  # selected files that are gone: (path, reason)
     for path in paths:
         if path["type"] == "file":
             full_remote_path = f"{state['provider']}://{path['path'].lstrip('/')}"

@@ -45,3 +45,11 @@ def test_link_mode_uses_bucket_links(app):
     assert error is None
     assert api.image.calls == [("links", ["1.jpg"], ["s3://bkt/x/1.jpg"])]
     assert api.remote_storage.downloads == []
+
+
+def test_folder_with_empty_name_does_not_import_the_whole_bucket(app):
+    # a key "/a.jpg" makes the viewer show a folder with an empty name: "/bkt/"
+    api = FakeApi({"bkt//a.jpg": 3, "bkt/x/1.jpg": 3, "bkt/y/2.jpg": 3})
+    main, g, error = app(api, make_state([("/bkt/", "folder"), ("/bkt/x/1.jpg", "file")]))
+    assert api.datasets[api.created_datasets[0]] == ["1.jpg"]
+    assert error is not None and "/bkt/" in str(error)
