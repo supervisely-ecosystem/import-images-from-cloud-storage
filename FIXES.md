@@ -112,3 +112,11 @@ the checks create afterwards.
 | 7 | `remote-img-test`; select the blank-named folder at the top of the list and file `a/b/image.jpg` (open `a`, `b` first) | 1 imported, error modal naming `/remote-img-test/` | **do not run**: imports the whole bucket |
 | 8 | Google Cloud Storage `sly-dev-test`, folder `test_img` (has sub-folder `ds0_007`); copy | 8 images | same |
 | 9 | Existing project from case 1 -> create a nested dataset in it in the UI, then import `a` into "existing dataset" = the nested one | 2 images in the nested dataset | spinner never stops, no message (if the selector offers nested datasets) |
+
+## Branch image (test tag)
+
+On this branch `config.json` uses `supervisely/import-images-from-cloud-storage:test-f5c839ed`. `release_branch.yml` follows
+`workflows/templates/build_release_branch.yml`: on push it builds that tag, named by the sha256 of
+`dev_requirements.txt`, and only if the tag is not on Docker Hub yet. Dev agents pull images "if not present", so
+every dependency change gets a new tag. **Before merging, set `docker_image` back to `supervisely/import-images-from-cloud-storage:6.74.34`**; `release.yml`
+builds that tag on the version release.
