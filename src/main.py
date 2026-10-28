@@ -1,4 +1,5 @@
 import os
+import posixpath
 
 import supervisely as sly
 
@@ -117,8 +118,9 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         full_remote_path = f"{state['provider']}://{path.lstrip('/')}"
         remote_paths.append(full_remote_path)
         widget_paths.append(path)
-        local_path = os.path.join(g.app.data_dir, path.lstrip("/"))
-        sly.fs.ensure_base_path(local_path)
+        # Bucket keys may contain "..", or be longer than a local file name may be:
+        # the local copy gets a name of its own inside the app temp dir.
+        local_path = safe_local_path(g.app.data_dir, len(local_paths), path)
         local_paths.append(local_path)
 
     # find selected dirs
@@ -216,16 +218,10 @@ def process(api: sly.Api, task_id, context, state, app_logger):
         sly.batched(local_paths, batch_size=g.BATCH_SIZE),
     ):
         start_name_generation = time.time()
-        images_names = []
-        for local_path in batch_local_paths:
-            image_name = sly.fs.get_file_name_with_ext(local_path)
-            image_name = sly.utils.generate_free_name(
-                used_names=all_images_names,
-                possible_name=image_name,
-                with_ext=True,
-                extend_used_names=True,
-            )
-            images_names.append(image_name)
+        images_names = [
+            free_name(all_images_names, posixpath.basename(temp_path))
+            for temp_path in batch_temp_paths
+        ]
         free_name_time += time.time() - start_name_generation
 
         if state["addMode"] == "copyData":
@@ -263,7 +259,11 @@ def process(api: sly.Api, task_id, context, state, app_logger):
                 skip_validation=True,
             )
         elif state["addMode"] == "copyData":
-            api.image.upload_paths(dataset.id, names=images_names, paths=batch_local_paths)
+            try:
+                api.image.upload_paths(dataset.id, names=images_names, paths=batch_local_paths)
+            finally:
+                for local_path in batch_local_paths:
+                    sly.fs.silent_remove(local_path)
         progress_items_cb(len(images_names))
 
     ui.reset_progress(api, task_id, 1)
@@ -289,6 +289,32 @@ def process(api: sly.Api, task_id, context, state, app_logger):
 # SDK version
 # limit list
 # list with pagination
+
+
+def safe_local_path(data_dir: str, index: int, remote_path: str) -> str:
+    """Local download path for a remote file: always directly inside `data_dir/downloads`."""
+    ext = sly.fs.get_file_ext(posixpath.basename(remote_path))
+    if len(ext) > 16 or "/" in ext or "\\" in ext:
+        ext = ""
+    local_path = os.path.join(data_dir, "downloads", f"{index:08d}{ext}")
+    sly.fs.ensure_base_path(local_path)
+    return local_path
+
+
+def free_name(used_names: set, name: str) -> str:
+    """`name`, or `name_01.ext`, `name_02.ext`, ... if taken; adds the result to `used_names`.
+
+    Same names as sly.utils.generate_free_name(with_ext=True), without copying the set on every
+    check (that made name generation quadratic for large imports).
+    """
+    res = name
+    suffix = 1
+    stem, ext = sly.fs.get_file_name(name), sly.fs.get_file_ext(name)
+    while res in used_names:
+        res = f"{stem}_{suffix:02d}{ext}"
+        suffix += 1
+    used_names.add(res)
+    return res
 
 
 def list_objects(api, full_dir_path):
